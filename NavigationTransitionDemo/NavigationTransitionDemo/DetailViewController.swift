@@ -78,6 +78,6 @@ extension DetailViewController: UIViewInteractivePopAnimationTransitionType {
     }
     
     func interactiveAnimationTypeForPop(to viewController: UIViewController) -> InteractivePopAnimationType {
-        return .stackScale
+        return .stackRotate
     }
 }

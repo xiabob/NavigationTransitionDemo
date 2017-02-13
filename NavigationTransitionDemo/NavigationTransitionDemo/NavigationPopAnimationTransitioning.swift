@@ -245,6 +245,8 @@ open class NavigationPopAnimationTransitioning: NSObject, UIViewControllerAnimat
         transform.m34 = -1/500.0 //设置透视投影
         toViewController.view.layer.transform = CATransform3DRotate(transform, -CGFloat(M_PI_4 / 4), 0, 1, 0)
         toViewController.view.layer.zPosition = -10000 //设置透视投影 ，就不能简单的设置为-1了
+        toViewController.view.layer.shouldRasterize = true //处理边缘锯齿
+        toViewController.view.layer.rasterizationScale = UIScreen.main.scale //同时需要设置scale，防止像素化问题
         UIView.animate(withDuration: transitionDuration(using: transitionContext), animations: {
             toViewController.view.layer.transform = CATransform3DIdentity
             fromViewController.view.frame.origin = CGPoint(x: fromViewController.view.frame.width, y: 0)
@@ -253,6 +255,7 @@ open class NavigationPopAnimationTransitioning: NSObject, UIViewControllerAnimat
                 fromViewController.view.frame.origin = CGPoint.zero
                 toViewController.view.layer.transform = CATransform3DIdentity
             }
+            toViewController.view.layer.shouldRasterize = false
             
             transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
         }
