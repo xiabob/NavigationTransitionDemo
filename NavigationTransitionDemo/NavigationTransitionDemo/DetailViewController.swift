@@ -24,6 +24,8 @@ class DetailViewController: UIViewController {
         navigationItem.title = "封面"
         view.backgroundColor = UIColor.red
         view.addSubview(cover)
+        
+        navigationController?.attach(to: self)
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -66,4 +68,16 @@ extension DetailViewController: UIViewPushAnimationTransitionType {
     }
 }
 
-
+extension DetailViewController: UIViewInteractivePopAnimationTransitionType {
+    func useInteractiveAnimation() -> Bool {
+        return true
+    }
+    
+    func interactiveTransitionDurationForPop(to viewController: UIViewController) -> TimeInterval {
+        return 0.25
+    }
+    
+    func interactiveAnimationTypeForPop(to viewController: UIViewController) -> InteractivePopAnimationType {
+        return .stackScale
+    }
+}

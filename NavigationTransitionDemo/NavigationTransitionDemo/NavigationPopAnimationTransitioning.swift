@@ -16,6 +16,8 @@ public enum PopAnimationType {
     case scale
     case mask(CGRect?)
     case custom
+    case stackRotate
+    case stackScale
 }
 
 public protocol UIViewPopAnimationTransitionType: NSObjectProtocol {
@@ -42,6 +44,8 @@ public enum InteractivePopAnimationType {
     case system
     case scale
     case custom
+    case stackRotate
+    case stackScale
 }
 
 public protocol UIViewInteractivePopAnimationTransitionType: NSObjectProtocol {
@@ -101,13 +105,17 @@ open class NavigationPopAnimationTransitioning: NSObject, UIViewControllerAnimat
         let type = fromVC.animationTypeForPop(to: toVC)
         switch type {
         case .scale:
-            return scaleAnimateTransition(using: transitionContext)
+            scaleAnimateTransition(using: transitionContext)
         case .mask(let rect):
-            return maskAnimateTransition(using: transitionContext, in: rect)
+            maskAnimateTransition(using: transitionContext, in: rect)
         case .custom:
-            return fromVC.customAnimationForPop(to: toVC, using: transitionContext, in: self)
+            fromVC.customAnimationForPop(to: toVC, using: transitionContext, in: self)
         case .system:
-            return systemAnimateTransition(using: transitionContext)
+            systemAnimateTransition(using: transitionContext)
+        case .stackRotate:
+            stackRotateAnimateTransition(using: transitionContext)
+        case .stackScale:
+            stackScaleAnimateTransition(using: transitionContext)
         }
     }
     
@@ -117,11 +125,15 @@ open class NavigationPopAnimationTransitioning: NSObject, UIViewControllerAnimat
         let type = fromVC.interactiveAnimationTypeForPop(to: toVC)
         switch type {
         case .scale:
-            return scaleAnimateTransition(using: transitionContext)
+            scaleAnimateTransition(using: transitionContext)
         case .custom:
-            return fromVC.customInteractiveAnimationForPop(to: toVC, using: transitionContext, in: self)
+            fromVC.customInteractiveAnimationForPop(to: toVC, using: transitionContext, in: self)
         case .system:
-            return systemAnimateTransition(using: transitionContext)
+            systemAnimateTransition(using: transitionContext)
+        case .stackRotate:
+            stackRotateAnimateTransition(using: transitionContext)
+        case .stackScale:
+            stackScaleAnimateTransition(using: transitionContext)
         }
     }
     
@@ -219,6 +231,55 @@ open class NavigationPopAnimationTransitioning: NSObject, UIViewControllerAnimat
         DispatchQueue.main.asyncAfter(deadline: DispatchTime.now()+transitionDuration(using: transitionContext)) {
             maskLayer.path = startPath.cgPath
             transitionContext.completeTransition(true)
+        }
+    }
+    
+    public func stackRotateAnimateTransition(using transitionContext: UIViewControllerContextTransitioning) {
+        guard let toViewController = transitionContext.viewController(forKey: .to) else {return}
+        guard let fromViewController = transitionContext.viewController(forKey: .from) else {return}
+        let containerView = transitionContext.containerView;
+        containerView.addSubview(toViewController.view)
+        containerView.addSubview(fromViewController.view)
+        
+        var transform = CATransform3DIdentity
+        transform.m34 = -1/500.0 //设置透视投影
+        toViewController.view.layer.transform = CATransform3DRotate(transform, -CGFloat(M_PI_4 / 4), 0, 1, 0)
+        toViewController.view.layer.zPosition = -10000 //设置透视投影 ，就不能简单的设置为-1了
+        UIView.animate(withDuration: transitionDuration(using: transitionContext), animations: {
+            toViewController.view.layer.transform = CATransform3DIdentity
+            fromViewController.view.frame.origin = CGPoint(x: fromViewController.view.frame.width, y: 0)
+        }) { (finished) in
+            if transitionContext.transitionWasCancelled {
+                fromViewController.view.frame.origin = CGPoint.zero
+                toViewController.view.layer.transform = CATransform3DIdentity
+            }
+            
+            transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
+        }
+    }
+    
+    public func stackScaleAnimateTransition(using transitionContext: UIViewControllerContextTransitioning) {
+        guard let toViewController = transitionContext.viewController(forKey: .to) else {return}
+        guard let fromViewController = transitionContext.viewController(forKey: .from) else {return}
+        let containerView = transitionContext.containerView;
+        containerView.addSubview(toViewController.view)
+        containerView.addSubview(fromViewController.view)
+        
+        let scale = 1 - 20/toViewController.view.frame.width
+        toViewController.view.layer.transform = CATransform3DMakeScale(scale, scale, 1)
+        toViewController.view.layer.zPosition = -10
+        UIView.animate(withDuration: transitionDuration(using: transitionContext), animations: {
+            toViewController.view.layer.zPosition = 0
+            toViewController.view.layer.transform = CATransform3DIdentity
+            fromViewController.view.frame.origin = CGPoint(x: fromViewController.view.frame.width, y: 0)
+        }) { (finished) in
+            if transitionContext.transitionWasCancelled {
+                fromViewController.view.frame.origin = CGPoint.zero
+                toViewController.view.layer.zPosition = 0
+                toViewController.view.layer.transform = CATransform3DIdentity
+            }
+            
+            transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
         }
     }
 }

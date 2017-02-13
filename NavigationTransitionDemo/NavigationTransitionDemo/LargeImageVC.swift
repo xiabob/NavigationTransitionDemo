@@ -89,6 +89,6 @@ extension LargeImageVC: UIViewInteractivePopAnimationTransitionType {
     }
     
     func interactiveAnimationTypeForPop(to viewController: UIViewController) -> InteractivePopAnimationType {
-        return .system
+        return .stackScale
     }
 }
